@@ -1,0 +1,71 @@
+{
+  "name": "dsh-plugin-dafeiyu-phone-chat",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "大肥鱼手机聊天：不经过 QQ，把 DSH/Aurabot 的人格、记忆、表情、语音和日记装进手机。DSH 插件 + 本地网关 + PWA/WebView。",
+  "license": "MIT",
+  "icon": "./icon.svg",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/whywhy1/dsh-phone-chat.git"
+  },
+  "homepage": "https://github.com/whywhy1/dsh-phone-chat#readme",
+  "bugs": {
+    "url": "https://github.com/whywhy1/dsh-phone-chat/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "aurabot",
+    "dsh-plugin",
+    "phone-chat",
+    "pwa",
+    "tailscale",
+    "android",
+    "chatbot",
+    "material3"
+  ],
+  "engines": {
+    "node": ">=20",
+    "dsh": ">=0.2.1"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./icon.svg": "./icon.svg"
+  },
+  "scripts": {
+    "check": "node --check index.js && node --check server.mjs && node --check build/build.mjs",
+    "set-code": "node scripts/set-code.mjs"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "server.mjs",
+    "stt.ps1",
+    "public/index.html",
+    "public/dafeiyu-chat.apk",
+    "aurabot-module/phone-bridge/index.mjs",
+    "build/build.mjs",
+    "build/package.json",
+    "build/sea-config.json",
+    "docs/API.md",
+    "scripts/set-code.mjs",
+    "README.md",
+    "README.en.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "LICENSE",
+    "THIRD_PARTY.md",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "meta": {
+    "title": "大肥鱼手机聊天",
+    "description": "不经 QQ，让 DSH/Aurabot 通过手机 App/浏览器聊天：表情、语音、日记、本地/外网切换，支持 Tailscale。插件启用后自动安装 Aurabot 手机桥并启动 8787 网关。"
+  }
+}

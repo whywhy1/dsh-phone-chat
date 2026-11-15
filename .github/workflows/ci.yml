@@ -1,0 +1,21 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Syntax check
+        run: |
+          node --check index.js
+          node --check server.mjs
+          node --check build/build.mjs
+      - name: Package metadata
+        run: node -e "const p=require('./package.json'); if(!p.dsh?.bundle?.patch) process.exit(1); console.log(p.name, p.version)"

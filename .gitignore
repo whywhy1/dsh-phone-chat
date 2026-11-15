@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/node_modules/
+build/server.cjs
+build/sea-prep.blob
+build/sea.generated.json
+*.log
+*.exe
+*.tgz
+config.json
+sessions.json
+messages.json
+.DS_Store
+Thumbs.db

@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+  <meta name="theme-color" content="#EEF4FF">
+  <title>大肥鱼 · 手机聊天</title>
+  <style>
+    :root{
+      color-scheme: light;
+      --bg-top:#F2F6FF;
+      --bg-mid:#E9EDFF;
+      --bg-low:#F6EAF4;
+      --bg-bottom:#FDF1F6;
+      --card:#FFFFFF;
+      --card-soft:#F4F6FF;
+      --ink:#1F2138;
+      --ink-2:#6C6E8A;
+      --ink-3:#9A9CB4;
+      --accent:#5372EE;
+      --accent-soft:#EDF1FF;
+      --line:rgba(31,33,56,.09);
+      --shadow:0 8px 24px rgba(83,90,160,.14);
+      --shadow-sm:0 4px 14px rgba(83,90,160,.10);
+      --ok:#41BE85;
+      --danger:#EE6A82;
+      --scrim:rgba(26,28,52,.42);
+      --paper:#FBF7EC;
+      --paper-ink:#3B372C;
+      --paper-meta:#8A8471;
+      --rule:30px;
+      --paper-fs:15px;
+      --paper-pad-y:26px;
+      --paper-pad-x:26px;
+    }
+    @media(max-width:560px){
+      :root{--rule:26px;--paper-fs:13.5px;--paper-pad-y:18px;--paper-pad-x:16px}
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg-top);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+    body{overflow:hidden;-webkit-tap-highlight-color:transparent}
+    button,input,textarea{font:inherit;color:inherit}
+    .app{height:100dvh;display:flex;flex-direction:column;background:linear-gradient(168deg,var(--bg-top) 0%,var(--bg-mid) 34%,var(--bg-low) 70%,var(--bg-bottom) 100%)}
+
+    header{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:calc(12px + env(safe-area-inset-top)) 16px 6px;background:transparent}
+    .avatar{width:42px;height:42px;border-radius:16px;background:var(--card);display:grid;place-items:center;font-size:20px;flex:0 0 auto;box-shadow:var(--shadow-sm)}
+    .who{min-width:0;flex:1;padding-left:2px}
+    .who b{display:block;font-size:16px;line-height:22px;font-weight:600;letter-spacing:.2px;color:var(--ink)}
+    .who small{display:flex;align-items:center;gap:6px;color:var(--ink-2);font-size:11px;line-height:16px;margin-top:3px}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--danger);flex:0 0 auto}
+    .dot.ok{background:var(--ok)}
+
+    main{flex:1 1 auto;overflow-y:auto;padding:12px 16px 6px;scroll-behavior:smooth}
+    .empty{margin:14vh auto 0;max-width:270px;text-align:center;color:var(--ink-2);font-size:13px;line-height:21px;letter-spacing:.2px}
+    .empty .big{width:108px;height:108px;margin:0 auto 18px;font-size:0;background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><defs><linearGradient id='g' gradientUnits='userSpaceOnUse' x1='0' y1='8' x2='120' y2='112'><stop offset='0' stop-color='%236E8CFF'/><stop offset='1' stop-color='%238E7BEE'/></linearGradient></defs><g fill='url(%23g)'><circle cx='60' cy='60' r='28'/><circle cx='94' cy='60' r='13'/><circle cx='89.44' cy='77' r='13'/><circle cx='77' cy='89.44' r='13'/><circle cx='60' cy='94' r='13'/><circle cx='43' cy='89.44' r='13'/><circle cx='30.56' cy='77' r='13'/><circle cx='26' cy='60' r='13'/><circle cx='30.56' cy='43' r='13'/><circle cx='43' cy='30.56' r='13'/><circle cx='60' cy='26' r='13'/><circle cx='77' cy='30.56' r='13'/><circle cx='89.44' cy='43' r='13'/></g></svg>") center/contain no-repeat}
+    .row{display:flex;margin:6px 0;gap:8px;align-items:flex-end}
+    .row.user{justify-content:flex-end}
+    .bubble{max-width:82%;padding:12px 16px;border-radius:22px;font-size:14px;line-height:21px;letter-spacing:.2px;white-space:pre-wrap;word-break:break-word}
+    .assistant .bubble{background:var(--card);color:var(--ink);border-bottom-left-radius:8px;box-shadow:var(--shadow-sm)}
+    .user .bubble{background:linear-gradient(140deg,#5B84F5,#6F68E6);color:#fff;border-bottom-right-radius:8px;box-shadow:0 6px 18px rgba(88,100,230,.26)}
+    .meta{font-size:10px;line-height:15px;color:var(--ink-3);margin:4px 6px 0;text-align:right}
+    .typing{display:none;margin:8px 24px;color:#7B7FA6;font-size:12px;line-height:16px}
+    .typing.on{display:block}
+
+    /* composer: white pill + stacked plus menu */
+    .composer{flex:0 0 auto;padding:4px 14px calc(12px + env(safe-area-inset-bottom));background:transparent;border-top:0;position:relative}
+    .plusmenu{position:absolute;left:14px;bottom:calc(100% - 4px);display:flex;flex-direction:column;gap:8px;z-index:12;visibility:hidden;opacity:0;transform:translateY(8px);transition:opacity .18s ease,transform .18s ease,visibility .18s}
+    .plusmenu.open{visibility:visible;opacity:1;transform:none}
+    .menuitem{display:flex;align-items:center;gap:9px;border:0;background:var(--card);color:var(--ink);border-radius:999px;padding:6px 18px 6px 6px;font-size:12px;letter-spacing:.3px;cursor:pointer;box-shadow:var(--shadow);white-space:nowrap;opacity:0;transform:translateY(10px) scale(.96);transition:opacity .2s ease,transform .24s cubic-bezier(.3,1.25,.5,1)}
+    .plusmenu.open .menuitem{opacity:1;transform:none}
+    .plusmenu.open .menuitem:nth-child(1){transition-delay:.02s}
+    .plusmenu.open .menuitem:nth-child(2){transition-delay:.06s}
+    .plusmenu.open .menuitem:nth-child(3){transition-delay:.10s}
+    .plusmenu.open .menuitem:nth-child(4){transition-delay:.14s}
+    .menuitem .micon{width:28px;height:28px;border-radius:50%;background:var(--accent-soft);display:grid;place-items:center;font-size:14px;line-height:1;flex:0 0 auto}
+    .menuitem:active{background:#EEF2FF}
+
+    .stickerpanel{display:none;position:absolute;left:8px;right:8px;bottom:calc(100% - 2px);margin-bottom:10px;background:var(--card);border-radius:28px;padding:12px 12px 16px;box-shadow:0 16px 42px rgba(70,70,130,.22);z-index:10}
+    .stickerpanel::before{content:"";display:block;width:36px;height:4px;border-radius:2px;background:#DDE3F5;margin:0 auto 14px}
+    .stickerpanel.on{display:block}
+    .stickergrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:240px;overflow:auto;color:var(--ink-3);font-size:12px}
+    .stickergrid button{border:0;background:var(--card-soft);border-radius:14px;padding:6px;cursor:pointer;aspect-ratio:1;display:grid;place-items:center}
+    .stickergrid img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px}
+    .media{margin-bottom:6px}
+    .media img{display:block;max-width:100%;max-height:240px;border-radius:18px}
+    .media img.stickerimg{max-width:120px;max-height:120px;background:transparent;border-radius:10px}
+    .media audio{display:block;width:220px;max-width:100%;margin-top:6px}
+    .bubble .msgtext{white-space:pre-wrap;word-break:break-word}
+
+    .inputwrap{display:flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;padding:6px;min-height:54px;box-shadow:0 10px 26px rgba(83,90,160,.18)}
+    .inputwrap:focus-within{box-shadow:0 12px 30px rgba(83,90,160,.22),0 0 0 1px #D9E2FF}
+    .plusbtn{position:relative;width:36px;height:36px;border:0;border-radius:50%;background:#EEF1FB;color:#4C5B8F;display:grid;place-items:center;flex:0 0 auto;cursor:pointer;transition:background .18s}
+    .plusbtn svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;transition:opacity .16s}
+    .plusbtn .ic-minus{position:absolute;opacity:0}
+    .plusbtn.open{background:#E3E9FB}
+    .plusbtn.open .ic-plus{opacity:0}
+    .plusbtn.open .ic-minus{opacity:1}
+    textarea{flex:1;resize:none;border:0;outline:0;background:transparent;color:var(--ink);font-size:15px;line-height:20px;letter-spacing:.2px;max-height:120px;min-height:22px;padding:9px 0;caret-color:var(--accent)}
+    textarea::placeholder{color:var(--ink-3)}
+    .micbtn{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:#7C86AE;display:grid;place-items:center;flex:0 0 auto;cursor:pointer;transition:background .18s,color .18s}
+    .micbtn svg{width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round}
+    .micbtn.rec{background:#FDECF0;color:#D9536E}
+    .send{width:40px;height:40px;border:0;border-radius:50%;background:linear-gradient(140deg,#5B84F5,#7A6BE8);color:#fff;display:grid;place-items:center;flex:0 0 auto;cursor:pointer;box-shadow:0 6px 16px rgba(88,100,230,.32)}
+    .send svg{width:18px;height:18px;fill:currentColor}
+    .send:active{filter:brightness(1.06)}
+    .send:disabled{opacity:.45;cursor:default}
+    .hint{text-align:center;color:var(--ink-3);font-size:11px;line-height:16px;margin-top:9px}
+    .rechint{font-size:11px;color:var(--danger);margin-left:4px}
+
+    /* diary: two-page notebook */
+    .diarymodal{position:fixed;inset:0;background:var(--scrim);display:none;align-items:center;justify-content:center;padding:14px;z-index:40;backdrop-filter:blur(2px)}
+    .diarymodal.on{display:flex}
+    .bookwrap{width:min(760px,100%);display:flex;flex-direction:column;align-items:center;gap:12px}
+    .book{position:relative;width:100%;height:min(72dvh,600px);display:grid;grid-template-columns:1fr 1fr;border-radius:18px;overflow:hidden;perspective:1700px;background:var(--paper);box-shadow:0 26px 64px rgba(60,62,110,.30),0 0 0 1px rgba(120,110,90,.14)}
+    .page{position:relative;overflow:hidden;padding:var(--paper-pad-y) var(--paper-pad-x);background-color:var(--paper);background-image:
+      repeating-linear-gradient(180deg,transparent 0 calc(var(--rule) - 1px),rgba(150,140,120,.14) calc(var(--rule) - 1px) var(--rule)),
+      radial-gradient(rgba(160,148,120,.055) 1px,transparent 1px);
+      background-size:auto,4px 4px;
+      background-position:0 var(--paper-pad-y),0 0}
+    .page-left{box-shadow:inset -16px 0 20px -14px rgba(90,80,60,.34);border-right:1px solid rgba(120,110,90,.16)}
+    .page-right{box-shadow:inset 16px 0 20px -14px rgba(90,80,60,.34)}
+    .page-right::after{content:"";position:absolute;right:0;bottom:0;width:26px;height:26px;background:linear-gradient(135deg,transparent 50%,#EFE6D1 50%);opacity:.85}
+    .spine{position:absolute;left:50%;top:0;bottom:0;width:1px;margin-left:-.5px;background:rgba(120,110,90,.30);z-index:2;pointer-events:none}
+    .leaf{position:absolute;left:50%;top:0;width:50%;height:100%;transform-origin:left center;transform-style:preserve-3d;display:none;z-index:3;will-change:transform}
+    .leaf-face{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;padding:var(--paper-pad-y) var(--paper-pad-x);background-color:var(--paper);background-image:
+      repeating-linear-gradient(180deg,transparent 0 calc(var(--rule) - 1px),rgba(150,140,120,.14) calc(var(--rule) - 1px) var(--rule)),
+      radial-gradient(rgba(160,148,120,.055) 1px,transparent 1px);
+      background-size:auto,4px 4px;
+      background-position:0 var(--paper-pad-y),0 0}
+    .leaf-front::after{content:"";position:absolute;left:0;top:0;bottom:0;width:36px;background:linear-gradient(90deg,rgba(0,0,0,.10),transparent);pointer-events:none}
+    .leaf-back{transform:rotateY(180deg)}
+    .leaf-back::after{content:"";position:absolute;right:0;top:0;bottom:0;width:36px;background:linear-gradient(270deg,rgba(0,0,0,.10),transparent);pointer-events:none}
+    .pagemeta{display:flex;align-items:center;gap:8px;font-size:11px;line-height:16px;color:var(--paper-meta);margin-bottom:12px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:.4px}
+    .pagemeta-badge{font-size:10px;line-height:16px;padding:2px 8px;border-radius:999px;background:#F0E3C9;color:#8A6432;letter-spacing:.2px}
+    .pagemeta-badge.local{background:#ECE7DC;color:#8A8471}
+    .pagetext{font-family:"Kaiti SC","KaiTi",STKaiti,"Songti SC","SimSun",serif;font-size:var(--paper-fs);line-height:var(--rule);letter-spacing:.6px;white-space:pre-wrap;word-break:break-word;color:var(--paper-ink)}
+    .page-measure{position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none}
+    .bookempty{padding:24px 0;text-align:center;color:var(--paper-meta);font-size:13px;line-height:22px}
+    .bookbar{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:999px;padding:6px 8px 6px 10px;box-shadow:var(--shadow)}
+    .navbtn{width:38px;height:38px;border:0;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:18px;line-height:1;cursor:pointer;display:grid;place-items:center}
+    .navbtn:disabled{opacity:.35;cursor:default}
+    .navbtn:active:enabled{background:#DFE7FF}
+    .pageno{min-width:96px;text-align:center;font-size:11px;letter-spacing:.4px;color:var(--ink-2)}
+    .diaryclose{border:0;background:transparent;color:var(--ink-3);border-radius:999px;height:38px;padding:0 14px;font-size:12px;cursor:pointer}
+    .diaryclose:hover{background:#F2F3F9;color:var(--ink)}
+
+    /* connection sheet + login */
+    .connsheet{width:min(520px,100%);background:#FCFBFF;border-radius:28px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 28px 64px rgba(60,62,110,.28)}
+    .connhead{display:flex;align-items:center;gap:10px;padding:16px 14px 16px 22px;border-bottom:1px solid var(--line);flex:0 0 auto}
+    .connhead b{flex:1;font-size:16px;line-height:24px;font-weight:600;color:var(--ink)}
+    .connhead small{color:var(--ink-3);font-size:11px}
+    .connopts{display:flex;flex-direction:column;gap:10px;padding:16px}
+    .connopt{text-align:left;border:1px solid transparent;background:var(--card);color:var(--ink);border-radius:20px;padding:16px 18px;cursor:pointer;box-shadow:var(--shadow-sm)}
+    .connopt b{display:block;font-size:14px;line-height:20px;font-weight:600;margin-bottom:4px;color:var(--ink)}
+    .connopt small{display:block;color:var(--ink-2);font-size:11px;line-height:16px}
+    .connopt.current{border-color:#BFD0FF;background:var(--accent-soft)}
+    .connopt:disabled{opacity:.55;cursor:default}
+    .connnote{color:var(--ink-3);font-size:11px;line-height:18px;padding:0 16px 16px}
+    .diaryempty{color:var(--ink-3);font-size:13px;text-align:center;padding:40px 0}
+
+    .login{position:fixed;inset:0;background:linear-gradient(168deg,var(--bg-top) 0%,var(--bg-mid) 36%,var(--bg-low) 72%,var(--bg-bottom) 100%);display:flex;align-items:center;justify-content:center;padding:24px;z-index:20}
+    .login.hidden{display:none}
+    .card{width:min(390px,100%);background:var(--card);border-radius:28px;padding:30px 22px 24px;box-shadow:0 24px 54px rgba(80,86,150,.20)}
+    .card h1{font-size:22px;line-height:30px;font-weight:600;margin:0 0 8px;color:var(--ink)}
+    .card p{color:var(--ink-2);font-size:13px;line-height:21px;margin:0 0 22px}
+    .code{width:100%;background:var(--card-soft);border:1px solid #E2E7F8;color:var(--ink);border-radius:16px;padding:16px;font-size:22px;line-height:24px;letter-spacing:.24em;text-align:center;outline:0;caret-color:var(--accent)}
+    .code::placeholder{color:var(--ink-3);letter-spacing:.08em;font-size:13px}
+    .code:focus{border-color:#B9C8FF;background:#fff;box-shadow:0 0 0 3px rgba(91,132,245,.14)}
+    .loginbtn{width:100%;margin-top:16px;border:0;border-radius:999px;height:50px;background:linear-gradient(140deg,#5B84F5,#7A6BE8);color:#fff;font-weight:600;font-size:15px;letter-spacing:.2px;cursor:pointer;box-shadow:0 10px 24px rgba(88,100,230,.30)}
+    .loginbtn:active{filter:brightness(1.06)}
+    .err{min-height:18px;color:var(--danger);font-size:12px;line-height:16px;margin-top:12px;text-align:center}
+    .toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#2A2C45;color:#fff;padding:13px 18px;border-radius:16px;font-size:13px;line-height:18px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;box-shadow:0 10px 28px rgba(40,40,80,.32);max-width:calc(100% - 32px)}
+    .toast.on{opacity:1}
+
+    @media(min-width:760px){
+      body{background:#E8ECFA}
+      .app{max-width:760px;margin:0 auto;box-shadow:0 0 0 1px rgba(31,33,56,.06)}
+      .bubble{max-width:72%}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="avatar">🐟</div>
+      <div class="who">
+        <b>大肥鱼</b>
+        <small><span id="dot" class="dot"></span><span id="status">连接中…</span></small>
+      </div>
+    </header>
+    <main id="main">
+      <div class="empty" id="empty">
+        <div class="big">🐟</div>
+        <div>这里是你和大肥鱼的手机聊天。<br>不经过 QQ，直接连到家里的 DSH。</div>
+      </div>
+    </main>
+    <div class="typing" id="typing">大肥鱼正在打字…</div>
+    <div class="composer">
+      <div class="plusmenu" id="plusmenu">
+        <button class="menuitem" id="connbtn" type="button"><span class="micon">🔗</span><span>连接</span></button>
+        <button class="menuitem" id="logout" type="button"><span class="micon">🚪</span><span>退出</span></button>
+        <button class="menuitem" id="stickerbtn" type="button"><span class="micon">😊</span><span>表情</span></button>
+        <button class="menuitem" id="diarybtn" type="button"><span class="micon">📖</span><span>日记</span></button>
+      </div>
+      <div class="stickerpanel" id="stickerpanel">
+        <div class="stickergrid" id="stickergrid"></div>
+      </div>
+      <input type="file" id="voicefile" accept="audio/*" capture style="display:none">
+      <div class="inputwrap">
+        <button class="plusbtn" id="plusbtn" type="button" aria-label="更多" aria-expanded="false">
+          <svg class="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          <svg class="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></svg>
+        </button>
+        <textarea id="input" rows="1" placeholder="跟大肥鱼说点什么…" autocomplete="off"></textarea>
+        <button class="micbtn" id="voicebtn" type="button" aria-label="语音">
+          <svg viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4.5"/></svg>
+        </button>
+        <button class="send" id="send" aria-label="发送">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+      <div class="hint">Enter 发送 · Shift+Enter 换行</div>
+      <span class="rechint" id="rechint"></span>
+    </div>
+  </div>
+
+  <div class="login" id="login">
+    <div class="card">
+      <h1>🐟 大肥鱼 · 手机聊天</h1>
+      <p>输入电脑上显示的访问码。这个入口只连你家的 DSH，不经过 QQ。</p>
+      <input id="code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="访问码">
+      <button class="loginbtn" id="loginbtn">进入</button>
+      <div class="err" id="loginerr"></div>
+      <a href="/apk" style="display:block;text-align:center;margin-top:14px;color:#7fb5ff;font-size:12px;text-decoration:none">下载安卓 App（可选）</a>
+    </div>
+  </div>
+
+  <div class="diarymodal" id="diarymodal">
+    <div class="bookwrap">
+      <div class="book" id="book">
+        <div class="page page-left" id="pageleft"></div>
+        <div class="page page-right" id="pageright"></div>
+        <div class="leaf" id="leaf">
+          <div class="leaf-face leaf-front" id="leaffront"></div>
+          <div class="leaf-face leaf-back" id="leafback"></div>
+        </div>
+        <div class="spine"></div>
+      </div>
+      <div class="bookbar">
+        <button class="navbtn" id="prevpage" type="button" aria-label="上一页">‹</button>
+        <span class="pageno" id="pageno">—</span>
+        <button class="navbtn" id="nextpage" type="button" aria-label="下一页">›</button>
+        <button class="diaryclose" id="diaryclose" type="button">合上</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="diarymodal" id="connmodal">
+    <div class="connsheet">
+      <div class="connhead">
+        <b>连接方式</b>
+        <small>本地 / 外网</small>
+        <button class="diaryclose" id="connclose" type="button">关闭</button>
+      </div>
+      <div class="connopts" id="connopts"></div>
+      <div class="connnote">切换后会自动带上登录状态，不用重新输访问码。在外面不要选「本地连接」（那个地址只在家里 Wi-Fi 可达）；外网连不上时先确认手机 Tailscale 在线。</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id)
+    const main = $('main'), input = $('input'), send = $('send'), dot = $('dot'), status = $('status')
+    let me = null
+    let es = null
+    let typingTimer = null
+    const renderedIds = new Set()
+
+    function timeText(at) {
+      const d = new Date(at || Date.now())
+      return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    }
+
+    function toast(text) {
+      const t = $('toast')
+      t.textContent = text
+      t.classList.add('on')
+      clearTimeout(toast._t)
+      toast._t = setTimeout(() => t.classList.remove('on'), 2200)
+    }
+
+    function setBridge(b) {
+      const ok = !!b?.connected
+      dot.classList.toggle('ok', ok)
+      status.textContent = ok ? '已连接 DSH' : (b?.lastError ? '桥接未连接' : '连接中…')
+    }
+
+    function nearBottom() {
+      return main.scrollHeight - main.scrollTop - main.clientHeight < 120
+    }
+
+    function scrollBottom(force) {
+      if (force || nearBottom()) main.scrollTop = main.scrollHeight
+    }
+
+    function addMessage(msg, opts = {}) {
+      if (msg?.id && renderedIds.has(msg.id)) return null
+      if (msg?.id) renderedIds.add(msg.id)
+      $('empty')?.remove()
+      const row = document.createElement('div')
+      row.className = 'row ' + (msg.role === 'user' ? 'user' : 'assistant')
+      row.dataset.id = msg.id || ''
+      const bubble = document.createElement('div')
+      bubble.className = 'bubble'
+      if (msg.text) {
+        const t = document.createElement('div')
+        t.className = 'msgtext'
+        t.textContent = msg.text
+        bubble.appendChild(t)
+      }
+      for (const item of (Array.isArray(msg.media) ? msg.media : [])) {
+        const media = document.createElement('div')
+        media.className = 'media'
+        if (item.type === 'image' || item.type === 'sticker') {
+          const img = document.createElement('img')
+          img.src = item.url
+          img.loading = 'lazy'
+          if (item.type === 'sticker') img.className = 'stickerimg'
+          media.appendChild(img)
+        } else if (item.type === 'audio') {
+          const audio = document.createElement('audio')
+          audio.controls = true
+          audio.preload = 'metadata'
+          audio.src = item.url
+          media.appendChild(audio)
+        }
+        if (media.childNodes.length) bubble.appendChild(media)
+      }
+      row.appendChild(bubble)
+      const meta = document.createElement('div')
+      meta.className = 'meta'
+      meta.textContent = timeText(msg.at)
+      const wrap = document.createElement('div')
+      wrap.style.maxWidth = '82%'
+      wrap.appendChild(row)
+      wrap.appendChild(meta)
+      main.appendChild(wrap)
+      if (!opts.silent) scrollBottom(opts.force)
+      return wrap
+    }
+
+    function setTyping(on) {
+      $('typing').classList.toggle('on', !!on)
+      if (on) scrollBottom(false)
+    }
+
+    function scheduleTypingOff() {
+      clearTimeout(typingTimer)
+      typingTimer = setTimeout(() => setTyping(false), 1200)
+    }
+
+    function authHeaders() {
+      return { 'content-type': 'application/json' }
+    }
+
+    async function api(path, opts = {}) {
+      const res = await fetch(path, { credentials: 'same-origin', ...opts })
+      if (res.status === 401) {
+        showLogin()
+        throw new Error('unauthorized')
+      }
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status))
+      return data
+    }
+
+    function showLogin() {
+      $('login').classList.remove('hidden')
+    }
+
+    function hideLogin() {
+      $('login').classList.add('hidden')
+    }
+
+    async function boot() {
+      try {
+        const data = await api('/api/me')
+        if (!data.ok) return showLogin()
+        me = data
+        hideLogin()
+        setBridge(data.bridge)
+        await loadHistory()
+        openEvents()
+      } catch (e) {
+        if (e.message !== 'unauthorized') showLogin()
+      }
+    }
+
+    async function loadHistory() {
+      const data = await api('/api/history')
+      main.innerHTML = ''
+      renderedIds.clear()
+      if (!data.messages?.length) {
+        main.innerHTML = '<div class="empty" id="empty"><div class="big">🐟</div><div>这里是你和大肥鱼的手机聊天。<br>不经过 QQ，直接连到家里的 DSH。</div></div>'
+        return
+      }
+      for (const msg of data.messages) addMessage(msg, { silent: true })
+      scrollBottom(true)
+      setBridge(data.bridge)
+    }
+
+    function openEvents() {
+      if (es) es.close()
+      es = new EventSource('/api/events')
+      es.addEventListener('ready', (event) => {
+        try { setBridge(JSON.parse(event.data).bridge) } catch {}
+      })
+      es.addEventListener('bridge', (event) => {
+        try { setBridge(JSON.parse(event.data)) } catch {}
+      })
+      es.addEventListener('message', (event) => {
+        try {
+          const msg = JSON.parse(event.data)
+          if (msg.role === 'assistant') setTyping(false)
+          addMessage(msg)
+        } catch {}
+      })
+      es.onerror = () => {
+        dot.classList.remove('ok')
+        status.textContent = '正在重连…'
+        setTyping(false)
+      }
+    }
+
+    async function doLogin() {
+      const code = $('code').value.trim()
+      if (!code) return
+      $('loginerr').textContent = ''
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ code }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data.error || '访问码不对')
+        hideLogin()
+        await boot()
+      } catch (e) {
+        $('loginerr').textContent = e.message
+      }
+    }
+
+    async function sendMessage() {
+      const text = input.value.trim()
+      if (!text) return
+      input.value = ''
+      input.style.height = 'auto'
+      setTyping(true)
+      try {
+        const data = await api('/api/send', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ text }),
+        })
+        if (data?.message) addMessage(data.message)
+      } catch (e) {
+        setTyping(false)
+        toast(e.message || '发送失败')
+        input.value = text
+      }
+    }
+
+    async function sendSticker(id) {
+      $('stickerpanel').classList.remove('on')
+      setTyping(true)
+      try {
+        const data = await api('/api/send', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ stickerId: id }) })
+        if (data?.message) addMessage(data.message)
+      } catch (e) {
+        setTyping(false)
+        toast(e.message || '表情发送失败')
+      }
+    }
+
+    let stickersLoaded = false
+    async function loadStickers() {
+      if (stickersLoaded) return
+      try {
+        const data = await api('/api/stickers')
+        const grid = $('stickergrid')
+        grid.innerHTML = ''
+        for (const s of data.stickers || []) {
+          const btn = document.createElement('button')
+          btn.type = 'button'
+          btn.title = s.name || '表情'
+          const img = document.createElement('img')
+          img.loading = 'lazy'
+          img.src = '/stickers/' + encodeURIComponent(s.file)
+          btn.appendChild(img)
+          btn.onclick = () => sendSticker(s.id)
+          grid.appendChild(btn)
+        }
+        if (!grid.childNodes.length) grid.textContent = '表情库还是空的'
+        stickersLoaded = true
+      } catch (e) {
+        toast(e.message || '表情库加载失败')
+      }
+    }
+
+    // --- plus menu ---
+    const plusbtn = $('plusbtn'), plusmenu = $('plusmenu')
+    function closeMenu() {
+      plusmenu.classList.remove('open')
+      plusbtn.classList.remove('open')
+      plusbtn.setAttribute('aria-expanded', 'false')
+    }
+    function toggleMenu() {
+      const open = !plusmenu.classList.contains('open')
+      plusmenu.classList.toggle('open', open)
+      plusbtn.classList.toggle('open', open)
+      plusbtn.setAttribute('aria-expanded', open ? 'true' : 'false')
+      if (open) $('stickerpanel').classList.remove('on')
+    }
+    plusbtn.onclick = (e) => { e.stopPropagation(); toggleMenu() }
+    plusmenu.addEventListener('click', (e) => {
+      if (e.target.closest('.menuitem')) setTimeout(closeMenu, 0)
+    })
+    document.addEventListener('click', (e) => {
+      if (!plusmenu.classList.contains('open')) return
+      if (e.target.closest('#plusmenu') || e.target.closest('#plusbtn')) return
+      closeMenu()
+    })
+
+    $('stickerbtn').onclick = () => {
+      const panel = $('stickerpanel')
+      panel.classList.toggle('on')
+      if (panel.classList.contains('on')) loadStickers()
+    }
+
+    // --- diary: two-page notebook with page turn ---
+    let diaryPages = []
+    let diarySpread = 0
+    let turning = false
+    let measureEl = null
+
+    function diaryDate(at) {
+      const d = new Date(at || Date.now())
+      return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+    }
+
+    function textHeight(text) {
+      if (!measureEl) {
+        measureEl = document.createElement('div')
+        measureEl.className = 'page-measure'
+        const inner = document.createElement('div')
+        inner.className = 'pagetext'
+        measureEl.appendChild(inner)
+        document.body.appendChild(measureEl)
+      }
+      measureEl.firstChild.textContent = text
+      return measureEl.offsetHeight
+    }
+
+    function largestFit(text, height) {
+      let lo = 1, hi = text.length, best = 0
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1
+        if (textHeight(text.slice(0, mid)) <= height) { best = mid; lo = mid + 1 }
+        else hi = mid - 1
+      }
+      return best
+    }
+
+    function paginate(text, availFirst, availRest) {
+      const out = []
+      let rest = String(text || '').replace(/\r\n/g, '\n').trim()
+      let avail = availFirst
+      while (rest.length) {
+        let n = largestFit(rest, avail)
+        if (n <= 0) n = Math.min(rest.length, 16)
+        if (n < rest.length) {
+          const floor = Math.max(Math.floor(n * .72), n - 16)
+          for (let k = n; k > floor; k--) {
+            const ch = rest[k - 1]
+            if ('。！？；\n，、'.indexOf(ch) >= 0) { n = k; break }
+          }
+        }
+        out.push(rest.slice(0, n))
+        rest = rest.slice(n).replace(/^\n+/, '')
+        avail = availRest
+      }
+      if (!out.length) out.push('')
+      return out
+    }
+
+    function pageNode(page) {
+      const wrap = document.createElement('div')
+      if (page.first) {
+        const meta = document.createElement('div')
+        meta.className = 'pagemeta'
+        const date = document.createElement('span')
+        date.textContent = diaryDate(page.at)
+        meta.appendChild(date)
+        const badge = document.createElement('span')
+        badge.className = 'pagemeta-badge' + (page.ok ? '' : ' local')
+        badge.textContent = page.ok ? '已发到空间' : '只存在本地'
+        meta.appendChild(badge)
+        wrap.appendChild(meta)
+      }
+      const text = document.createElement('div')
+      text.className = 'pagetext'
+      text.textContent = page.text
+      wrap.appendChild(text)
+      return wrap
+    }
+
+    function fillPage(el, page) {
+      el.innerHTML = ''
+      if (page) el.appendChild(pageNode(page))
+    }
+
+    function spreadCount() {
+      return Math.max(1, Math.ceil(diaryPages.length / 2))
+    }
+
+    function renderPageNo() {
+      const total = diaryPages.length
+      if (!total) {
+        $('pageno').textContent = '空本子'
+      } else {
+        const from = diarySpread * 2 + 1
+        const to = Math.min(total, diarySpread * 2 + 2)
+        $('pageno').textContent = '第 ' + from + (to > from ? '–' + to : '') + ' 页 / 共 ' + total + ' 页'
+      }
+      $('prevpage').disabled = diarySpread <= 0
+      $('nextpage').disabled = diarySpread >= spreadCount() - 1
+    }
+
+    function renderSpread() {
+      const L = diaryPages[diarySpread * 2]
+      const R = diaryPages[diarySpread * 2 + 1]
+      fillPage($('pageleft'), L)
+      fillPage($('pageright'), R)
+      renderPageNo()
+    }
+
+    function pageSize() {
+      const el = $('pageleft')
+      const cs = getComputedStyle(el)
+      const w = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2
+      const h = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 6
+      return { w: Math.max(80, w), h: Math.max(80, h) }
+    }
+
+    function buildBook(items) {
+      const size = pageSize()
+      if (measureEl && measureEl.parentNode) measureEl.parentNode.removeChild(measureEl)
+      measureEl = document.createElement('div')
+      measureEl.className = 'page-measure'
+      measureEl.style.width = size.w + 'px'
+      const inner = document.createElement('div')
+      inner.className = 'pagetext'
+      measureEl.appendChild(inner)
+      document.body.appendChild(measureEl)
+      diaryPages = []
+      const headerH = 62
+      for (const item of items) {
+        const chunks = paginate(item.text, size.h - headerH, size.h)
+        chunks.forEach((chunk, i) => {
+          diaryPages.push({ text: chunk, first: i === 0, at: Number(item.at || 0), ok: Boolean(item.ok) })
+        })
+      }
+      document.body.removeChild(measureEl)
+      measureEl = null
+      diarySpread = 0
+    }
+
+    async function loadDiary() {
+      $('pageno').textContent = '正在翻日记本…'
+      fillPage($('pageleft'), null)
+      fillPage($('pageright'), null)
+      try {
+        const data = await api('/api/diary')
+        const items = Array.isArray(data.items) ? data.items : []
+        if (!items.length) {
+          buildBook([])
+          $('pageleft').innerHTML = '<div class="bookempty">她还没写日记。<br>等她想说点什么，这一页就会有的。</div>'
+          renderPageNo()
+          return
+        }
+        buildBook(items)
+        renderSpread()
+      } catch (e) {
+        buildBook([])
+        const msg = String(e.message || e).replace(/[<>]/g, '')
+        $('pageleft').innerHTML = '<div class="bookempty">日记本没打开：' + msg + '</div>'
+        renderPageNo()
+      }
+    }
+
+    function turnFinished() {
+      const leaf = $('leaf')
+      turning = false
+      leaf.style.transition = 'none'
+      leaf.style.transform = ''
+      leaf.style.display = 'none'
+      $('leaffront').innerHTML = ''
+      $('leafback').innerHTML = ''
+    }
+
+    function flipNext() {
+      const next = diarySpread + 1
+      if (turning || next >= spreadCount()) return
+      const curRight = diaryPages[diarySpread * 2 + 1]
+      const nl = diaryPages[next * 2]
+      const nr = diaryPages[next * 2 + 1]
+      const leaf = $('leaf')
+      turning = true
+      fillPage($('pageleft'), nl)
+      fillPage($('pageright'), nr)
+      fillPage($('leaffront'), curRight)
+      fillPage($('leafback'), nl)
+      leaf.style.transition = 'none'
+      leaf.style.transform = 'rotateY(0deg)'
+      leaf.style.display = 'block'
+      void leaf.offsetWidth
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+      let closed = false
+      const finish = () => {
+        if (closed) return
+        closed = true
+        clearTimeout(fallback)
+        leaf.removeEventListener('transitionend', onEnd)
+        diarySpread = next
+        renderSpread()
+        turnFinished()
+      }
+      const onEnd = (e) => { if (e.propertyName === 'transform') finish() }
+      const fallback = setTimeout(finish, reduce ? 0 : 950)
+      leaf.addEventListener('transitionend', onEnd)
+      leaf.style.transition = reduce ? 'none' : 'transform .78s cubic-bezier(.42,.05,.2,1)'
+      leaf.style.transform = 'rotateY(-180deg)'
+    }
+
+    function flipPrev() {
+      const prev = diarySpread - 1
+      if (turning || prev < 0) return
+      const curLeft = diaryPages[diarySpread * 2]
+      const pl = diaryPages[prev * 2]
+      const pr = diaryPages[prev * 2 + 1]
+      const leaf = $('leaf')
+      turning = true
+      fillPage($('pageleft'), pl)
+      fillPage($('leaffront'), pr)
+      fillPage($('leafback'), curLeft)
+      leaf.style.transition = 'none'
+      leaf.style.transform = 'rotateY(-180deg)'
+      leaf.style.display = 'block'
+      void leaf.offsetWidth
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+      let closed = false
+      const finish = () => {
+        if (closed) return
+        closed = true
+        clearTimeout(fallback)
+        leaf.removeEventListener('transitionend', onEnd)
+        diarySpread = prev
+        fillPage($('pageright'), pr)
+        renderSpread()
+        turnFinished()
+      }
+      const onEnd = (e) => { if (e.propertyName === 'transform') finish() }
+      const fallback = setTimeout(finish, reduce ? 0 : 950)
+      leaf.addEventListener('transitionend', onEnd)
+      leaf.style.transition = reduce ? 'none' : 'transform .78s cubic-bezier(.42,.05,.2,1)'
+      leaf.style.transform = 'rotateY(0deg)'
+    }
+
+    $('prevpage').onclick = flipPrev
+    $('nextpage').onclick = flipNext
+
+    function openDiary() {
+      $('diarymodal').classList.add('on')
+      closeMenu()
+      loadDiary()
+    }
+    $('diarybtn').onclick = openDiary
+    $('diaryclose').onclick = () => $('diarymodal').classList.remove('on')
+    $('diarymodal').addEventListener('click', (e) => {
+      if (e.target === $('diarymodal')) $('diarymodal').classList.remove('on')
+    })
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        $('diarymodal').classList.remove('on')
+        $('connmodal').classList.remove('on')
+        closeMenu()
+      }
+    })
+
+    // --- local / remote connection switch ---
+    async function switchTo(to) {
+      try {
+        const data = await api('/api/switch', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ to }),
+        })
+        if (data.url) location.href = data.url
+      } catch (e) {
+        toast(e.message || '切换失败')
+      }
+    }
+
+    async function openConn() {
+      const modal = $('connmodal')
+      const opts = $('connopts')
+      modal.classList.add('on')
+      closeMenu()
+      opts.innerHTML = '<div class="diaryempty">正在检测连接…</div>'
+      try {
+        const data = await api('/api/endpoints')
+        const current = String(data.current || '').replace(/\/$/, '')
+        opts.innerHTML = ''
+        const add = (to, title, address, note) => {
+          const btn = document.createElement('button')
+          btn.type = 'button'
+          btn.className = 'connopt' + (current === address ? ' current' : '')
+          const b = document.createElement('b')
+          b.textContent = title
+          const s = document.createElement('small')
+          s.textContent = address || '未检测到'
+          const n = document.createElement('small')
+          n.style.marginTop = '4px'
+          n.textContent = current === address ? '当前连接' : note
+          btn.appendChild(b)
+          btn.appendChild(s)
+          btn.appendChild(n)
+          if (!address || current === address) btn.disabled = true
+          else btn.onclick = () => switchTo(to)
+          opts.appendChild(btn)
+        }
+        add('local', '本地连接', data.local, '家里 Wi-Fi，速度最快')
+        add('remote', '外网连接', data.remote, 'Tailscale，在外面也能用')
+      } catch (e) {
+        opts.innerHTML = '<div class="diaryempty">连接检测失败：' + e.message + '</div>'
+      }
+    }
+    $('connbtn').onclick = openConn
+    $('connclose').onclick = () => $('connmodal').classList.remove('on')
+    $('connmodal').addEventListener('click', (e) => {
+      if (e.target === $('connmodal')) $('connmodal').classList.remove('on')
+    })
+
+    // --- voice: WAV recording (works in browsers with mic permission) ---
+    let rec = null
+    function encodeWav(chunks, sampleRate) {
+      let length = 0
+      for (const c of chunks) length += c.length
+      const buffer = new ArrayBuffer(44 + length * 2)
+      const view = new DataView(buffer)
+      const write = (offset, text) => { for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i)) }
+      write(0, 'RIFF')
+      view.setUint32(4, 36 + length * 2, true)
+      write(8, 'WAVE')
+      write(12, 'fmt ')
+      view.setUint32(16, 16, true)
+      view.setUint16(20, 1, true)
+      view.setUint16(22, 1, true)
+      view.setUint32(24, sampleRate, true)
+      view.setUint32(28, sampleRate * 2, true)
+      view.setUint16(32, 2, true)
+      view.setUint16(34, 16, true)
+      write(36, 'data')
+      view.setUint32(40, length * 2, true)
+      let offset = 44
+      for (const c of chunks) {
+        for (let i = 0; i < c.length; i++) {
+          const s = Math.max(-1, Math.min(1, c[i]))
+          view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true)
+          offset += 2
+        }
+      }
+      return new Blob([view], { type: 'audio/wav' })
+    }
+
+    async function sendVoiceBase64(b64) {
+      setTyping(true)
+      try {
+        const data = await api('/api/send', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ voice: b64 }) })
+        if (data?.message) addMessage(data.message)
+      } catch (e) {
+        setTyping(false)
+        toast(e.message || '语音发送失败')
+      }
+    }
+
+    function stopRecording() {
+      if (!rec) return
+      const r = rec
+      rec = null
+      $('voicebtn').classList.remove('rec')
+      $('rechint').textContent = ''
+      try { r.proc.disconnect() } catch {}
+      try { r.source.disconnect() } catch {}
+      try { r.gain.disconnect() } catch {}
+      try { r.stream.getTracks().forEach((t) => t.stop()) } catch {}
+      try { r.ctx.close() } catch {}
+      const blob = encodeWav(r.chunks, r.sampleRate)
+      const reader = new FileReader()
+      reader.onload = () => {
+        const b64 = String(reader.result).split(',')[1] || ''
+        if (b64) sendVoiceBase64(b64)
+      }
+      reader.readAsDataURL(blob)
+    }
+
+    async function startRecording() {
+      if (!navigator.mediaDevices?.getUserMedia || !(window.AudioContext || window.webkitAudioContext)) {
+        toast('这个壳不能直接录音，改选语音文件')
+        $('voicefile').click()
+        return
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        const Ctx = window.AudioContext || window.webkitAudioContext
+        const ctx = new Ctx()
+        const source = ctx.createMediaStreamSource(stream)
+        const proc = ctx.createScriptProcessor(4096, 1, 1)
+        const gain = ctx.createGain()
+        gain.gain.value = 0
+        const chunks = []
+        proc.onaudioprocess = (e) => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)))
+        source.connect(proc)
+        proc.connect(gain)
+        gain.connect(ctx.destination)
+        rec = { stream, ctx, source, proc, gain, chunks, sampleRate: ctx.sampleRate }
+        $('voicebtn').classList.add('rec')
+        $('rechint').textContent = '录音中…'
+        setTimeout(() => { if (rec) stopRecording() }, 15000)
+      } catch (e) {
+        toast('麦克风不可用，改选语音文件')
+        $('voicefile').click()
+      }
+    }
+
+    $('voicebtn').onclick = () => {
+      if (rec) stopRecording()
+      else startRecording()
+    }
+
+    $('voicefile').onchange = async () => {
+      const file = $('voicefile').files?.[0]
+      $('voicefile').value = ''
+      if (!file) return
+      const buf = await file.arrayBuffer()
+      let binary = ''
+      const bytes = new Uint8Array(buf)
+      for (let i = 0; i < bytes.length; i += 0x8000) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000))
+      }
+      sendVoiceBase64(btoa(binary))
+    }
+
+    $('loginbtn').onclick = doLogin
+    $('code').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin() })
+    send.onclick = sendMessage
+    $('logout').onclick = async () => {
+      try { await fetch('/api/logout', { method: 'POST' }) } catch {}
+      showLogin()
+    }
+
+    input.addEventListener('input', () => {
+      input.style.height = 'auto'
+      input.style.height = Math.min(120, input.scrollHeight) + 'px'
+    })
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+        e.preventDefault()
+        sendMessage()
+      }
+    })
+    main.addEventListener('scroll', () => {
+      if (nearBottom()) setTyping(false)
+    })
+
+    boot()
+  </script>
+</body>
+</html>
