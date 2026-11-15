@@ -204,6 +204,27 @@ export default {
         return
       }
 
+      if (req.method === 'POST' && url.pathname === '/diary/write') {
+        if (!authorized) return sendJson(res, 401, { ok: false, error: 'unauthorized' })
+        try {
+          const diary = api.use('diary')
+          if (!diary || typeof diary.writeDiary !== 'function') {
+            return sendJson(res, 503, { ok: false, error: 'Aurabot 的「空间日记」模块没在运行' })
+          }
+          const result = await diary.writeDiary({ visibility: 'self' })
+          sendJson(res, 200, {
+            ok: Boolean(result?.ok),
+            text: String(result?.text || ''),
+            message: String(result?.message || ''),
+            visibility: result?.visibility || 'self',
+            local: true,
+          })
+        } catch (error) {
+          sendJson(res, 500, { ok: false, error: String(error.message || error) })
+        }
+        return
+      }
+
       if (req.method === 'POST' && url.pathname === '/inbound') {
         if (!authorized) return sendJson(res, 401, { ok: false, error: 'unauthorized' })
         try {

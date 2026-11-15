@@ -719,6 +719,23 @@ const server = http.createServer(async (req, res) => {
     return
   }
 
+  if (req.method === 'POST' && pathname === '/api/diary/write') {
+    if (!authorize(req)) return json(res, 401, { ok: false })
+    if (!bridgeToken) return json(res, 503, { ok: false, error: 'Aurabot phone-bridge token 不存在' })
+    try {
+      const upstream = await fetch(`${config.bridgeUrl}/diary/write`, {
+        method: 'POST',
+        headers: bridgeHeaders(),
+        signal: AbortSignal.timeout(180_000),
+      })
+      const data = await upstream.json().catch(() => ({}))
+      json(res, upstream.ok ? 200 : 502, data)
+    } catch (error) {
+      json(res, 502, { ok: false, error: `写日记失败：${error.message}` })
+    }
+    return
+  }
+
   if (req.method === 'GET' && pathname === '/api/history') {
     if (!authorize(req)) return json(res, 401, { ok: false })
     json(res, 200, { ok: true, messages: messages.slice(-200), bridge })

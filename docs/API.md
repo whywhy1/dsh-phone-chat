@@ -127,6 +127,29 @@ data: { ...消息对象... }
 
 来源：`~/.dsh/plugins-data/aurabot/diary.json`，按 `at` 倒序，最多 100 条。
 
+### POST /api/diary/write
+
+让 Aurabot 现写一篇空间日记。网关转发到 phone-bridge，最长等 180 秒。
+
+```json
+{}
+```
+
+返回：
+
+```json
+{
+  "ok": false,
+  "text": "11月15日 ...",
+  "message": "send_qzone_msg 失败：连不上 QQ 网关",
+  "visibility": "self",
+  "local": true
+}
+```
+
+- `ok:true`：已发到 QQ 空间。
+- `ok:false` 但 `text` 有内容：日记已写进本地 `diary.json`，只是 QQ 空间没发出去；手机日记本会显示“只存在本地”。
+
 ## 本地/外网切换
 
 ### GET /api/endpoints

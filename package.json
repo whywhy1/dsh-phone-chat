@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-dafeiyu-phone-chat",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "大肥鱼手机聊天：不经过 QQ，把 DSH/Aurabot 的人格、记忆、表情、语音和日记装进手机。DSH 插件 + 本地网关 + PWA/WebView。",
   "license": "MIT",

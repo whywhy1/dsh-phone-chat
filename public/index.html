@@ -143,6 +143,14 @@
     .pageno{min-width:96px;text-align:center;font-size:11px;letter-spacing:.4px;color:var(--ink-2)}
     .diaryclose{border:0;background:transparent;color:var(--ink-3);border-radius:999px;height:38px;padding:0 14px;font-size:12px;cursor:pointer}
     .diaryclose:hover{background:#F2F3F9;color:var(--ink)}
+    .diarywrite{border:0;background:var(--accent-soft);color:var(--accent);border-radius:999px;height:38px;padding:0 14px;font-size:12px;cursor:pointer;white-space:nowrap}
+    .diarywrite:disabled{opacity:.55;cursor:default}
+    @media(max-width:420px){
+      .bookbar{gap:6px;padding:6px}
+      .pageno{min-width:70px;font-size:10px}
+      .diarywrite{padding:0 9px;font-size:11px}
+      .diaryclose{padding:0 8px;font-size:11px}
+    }
 
     /* connection sheet + login */
     .connsheet{width:min(520px,100%);background:#FCFBFF;border-radius:28px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 28px 64px rgba(60,62,110,.28)}
@@ -250,6 +258,7 @@
         <button class="navbtn" id="prevpage" type="button" aria-label="上一页">‹</button>
         <span class="pageno" id="pageno">—</span>
         <button class="navbtn" id="nextpage" type="button" aria-label="下一页">›</button>
+        <button class="diarywrite" id="writediary" type="button">让她写一篇</button>
         <button class="diaryclose" id="diaryclose" type="button">合上</button>
       </div>
     </div>
@@ -301,12 +310,23 @@
     }
 
     function scrollBottom(force) {
-      if (force || nearBottom()) main.scrollTop = main.scrollHeight
+      if (!force && !nearBottom()) return
+      try {
+        main.scrollTo({ top: main.scrollHeight, behavior: force ? 'auto' : 'smooth' })
+      } catch {
+        main.scrollTop = main.scrollHeight
+      }
+    }
+
+    function keepBottom(force) {
+      requestAnimationFrame(() => scrollBottom(force))
+      setTimeout(() => scrollBottom(force), 80)
     }
 
     function addMessage(msg, opts = {}) {
       if (msg?.id && renderedIds.has(msg.id)) return null
       if (msg?.id) renderedIds.add(msg.id)
+      const forceBottom = Boolean(opts.force || msg.role === 'user')
       $('empty')?.remove()
       const row = document.createElement('div')
       row.className = 'row ' + (msg.role === 'user' ? 'user' : 'assistant')
@@ -327,12 +347,18 @@
           img.src = item.url
           img.loading = 'lazy'
           if (item.type === 'sticker') img.className = 'stickerimg'
+          img.addEventListener('load', () => {
+            if (!opts.silent && (forceBottom || nearBottom())) keepBottom(true)
+          })
           media.appendChild(img)
         } else if (item.type === 'audio') {
           const audio = document.createElement('audio')
           audio.controls = true
           audio.preload = 'metadata'
           audio.src = item.url
+          audio.addEventListener('loadedmetadata', () => {
+            if (!opts.silent && (forceBottom || nearBottom())) keepBottom(true)
+          })
           media.appendChild(audio)
         }
         if (media.childNodes.length) bubble.appendChild(media)
@@ -346,7 +372,7 @@
       wrap.appendChild(row)
       wrap.appendChild(meta)
       main.appendChild(wrap)
-      if (!opts.silent) scrollBottom(opts.force)
+      if (!opts.silent) keepBottom(forceBottom)
       return wrap
     }
 
@@ -423,7 +449,7 @@
         try {
           const msg = JSON.parse(event.data)
           if (msg.role === 'assistant') setTyping(false)
-          addMessage(msg)
+          addMessage(msg, { force: msg.role === 'user' })
         } catch {}
       })
       es.onerror = () => {
@@ -457,6 +483,7 @@
       if (!text) return
       input.value = ''
       input.style.height = 'auto'
+      scrollBottom(true)
       setTyping(true)
       try {
         const data = await api('/api/send', {
@@ -464,7 +491,7 @@
           headers: authHeaders(),
           body: JSON.stringify({ text }),
         })
-        if (data?.message) addMessage(data.message)
+        if (data?.message) addMessage(data.message, { force: true })
       } catch (e) {
         setTyping(false)
         toast(e.message || '发送失败')
@@ -477,7 +504,7 @@
       setTyping(true)
       try {
         const data = await api('/api/send', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ stickerId: id }) })
-        if (data?.message) addMessage(data.message)
+        if (data?.message) addMessage(data.message, { force: true })
       } catch (e) {
         setTyping(false)
         toast(e.message || '表情发送失败')
@@ -781,6 +808,28 @@
     $('prevpage').onclick = flipPrev
     $('nextpage').onclick = flipNext
 
+    let writingDiary = false
+    async function writeDiary() {
+      if (writingDiary) return
+      writingDiary = true
+      const btn = $('writediary')
+      btn.disabled = true
+      btn.textContent = '正在写…'
+      try {
+        const data = await api('/api/diary/write', { method: 'POST', headers: authHeaders(), body: '{}' })
+        if (data.ok) toast('写好了，已发到空间')
+        else toast('写好了，只存在本地：' + (data.message || '空间没发出去'))
+        await loadDiary()
+      } catch (e) {
+        toast(e.message || '写日记失败')
+      } finally {
+        writingDiary = false
+        btn.disabled = false
+        btn.textContent = '让她写一篇'
+      }
+    }
+    $('writediary').onclick = writeDiary
+
     function openDiary() {
       $('diarymodal').classList.add('on')
       closeMenu()
@@ -889,7 +938,7 @@
       setTyping(true)
       try {
         const data = await api('/api/send', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ voice: b64 }) })
-        if (data?.message) addMessage(data.message)
+        if (data?.message) addMessage(data.message, { force: true })
       } catch (e) {
         setTyping(false)
         toast(e.message || '语音发送失败')
@@ -974,6 +1023,15 @@
     input.addEventListener('input', () => {
       input.style.height = 'auto'
       input.style.height = Math.min(120, input.scrollHeight) + 'px'
+    })
+    input.addEventListener('focus', () => setTimeout(() => scrollBottom(true), 260))
+    if (window.visualViewport) {
+      visualViewport.addEventListener('resize', () => {
+        if (document.activeElement === input || nearBottom()) setTimeout(() => scrollBottom(true), 80)
+      })
+    }
+    window.addEventListener('resize', () => {
+      if (document.activeElement === input || nearBottom()) setTimeout(() => scrollBottom(true), 80)
     })
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
