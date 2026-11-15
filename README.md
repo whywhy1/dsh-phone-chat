@@ -9,12 +9,6 @@
 
 一个给 **DSH Desktop + Aurabot** 用的手机聊天前端。它不是又一个通用聊天机器人平台，而是把本机 DSH 会话里的大肥鱼人格、记忆、心情、表情库和日记，直接接到手机上；QQ / OneBot / SnowLuma 都不参与。
 
-### GitHub 仓库信息（可直接填）
-
-- **仓库名**：`dsh-phone-chat`
-- **显示名**：大肥鱼手机聊天 · Dafeiyu Phone Chat
-- **Description**：不经 QQ，把 DSH/Aurabot 的大肥鱼装进手机：Material 3 手机聊天 + 表情/语音/日记 + Tailscale 远程。DSH 插件一键安装。
-- **Topics**：`dsh` `deepseek-harness` `aurabot` `dsh-plugin` `phone-chat` `pwa` `tailscale` `android` `material3` `chatbot`
 
 ## 特性
 
